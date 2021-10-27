@@ -10,10 +10,10 @@ import java.util.List;
 
 @RestController
 public class RestEndpoints {
-    @GetMapping("/")
-    public String home(){
-        return "Welcome to salesforce api handler";
-    }
+//    @GetMapping("/")
+//    public String home(){
+//        return "Welcome to salesforce api handler";
+//    }
 
 
     static class IPRanges{
