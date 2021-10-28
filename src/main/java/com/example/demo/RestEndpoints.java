@@ -315,7 +315,7 @@ public class RestEndpoints {
         }
     }
 
-    @DeleteMapping("removeadditionals")
+    @DeleteMapping("/removeadditionals")
     public String removeAdditionalEmails(@RequestBody AdditionalEmailParams params) throws ConnectionException {
         if (!params.check()){
             return "ERROR";

@@ -7,8 +7,12 @@
         <ol>
             <li><b><a href="#">/ipranges</a></b>: POST <pre>{"ipRanges": [{"start": "180.188.237.17", "end":"180.188.237.17", "description":"Home IP address"}]}</pre></li>
             <li><b><a href="#">/updatevalidation</a></b>: POST <pre>{"name": "Salary__c.salary_description","active": false}</pre></li>
-            <li><b><a href="#">/deleteprofile</a></b>: POST <pre>{"name": "check user"}</pre></li>
+            <li><b><a href="#">/deleteprofile</a></b>: DELETE <pre>{"name": "check user"}</pre></li>
             <li><b><a href="#">/profileip</a></b>: POST <pre>{"name": "check user", "ipRanges": [{"start": "180.188.237.17", "end":"180.188.237.17", "description":"Home IP address"}]}</pre></li>
+            <li><b><a href="#">/workflowalert</a></b>: POST <pre>{"name": "Contact.contact_updates","recipients": [{"recipient": "damanarora724@gmail.com", "type": "user"}]}</pre></li>
+            <li><b><a href="#">/updateworkflowrule</a></b>: POST <pre>{"name": "Contact.contact_update","active": false}</pre></li>
+            <li><b><a href="#">/removeadditionals</a></b>: DELETE <pre>{"name": "Contact.contact_updates"}</pre></li>
+
         </ol>
 
         <form th:action="@{/logout}" method="post">
