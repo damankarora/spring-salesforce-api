@@ -10,10 +10,10 @@ import java.util.List;
 
 @RestController
 public class RestEndpoints {
-//    @GetMapping("/")
-//    public String home(){
-//        return "Welcome to salesforce api handler";
-//    }
+    @GetMapping("/contact")
+    public String home(){
+        return "Welcome to salesforce api handler contact page";
+    }
 
 
     static class IPRanges{
@@ -166,7 +166,7 @@ public class RestEndpoints {
         return "DONE";
     }
 
-    static class ValidationRuleParams{
+    static class RuleParams{
         public String name;
         public boolean active;
 
@@ -176,7 +176,7 @@ public class RestEndpoints {
     }
 
     @PostMapping("/updatevalidation")
-    public String updateValidationRules(@RequestBody ValidationRuleParams params) throws ConnectionException {
+    public String updateValidationRules(@RequestBody RuleParams params) throws ConnectionException {
         if (!params.check()){
             return "Bad request";
         }
@@ -204,5 +204,43 @@ public class RestEndpoints {
         }
         return "DONE";
     }
+
+
+
+    @PostMapping("/updateworkflowrule")
+    public String updateWorkflowRule(@RequestBody RuleParams params) throws ConnectionException {
+        if (!params.check()){
+            return "Bad request";
+        }
+
+        ReadResult readResult = SpringSfApiApplication.connection.readMetadata("WorkflowRule", new String[]{params.name});
+
+        Metadata[] records = readResult.getRecords();
+
+        if(records.length == 0 || records[0] == null){
+            return "Invalid name! Workflow rule not found";
+        }
+
+        for (Metadata rec : records){
+            WorkflowRule workflowRule = (WorkflowRule) rec;
+
+            System.out.println("Found: " + workflowRule.getFullName());
+
+            workflowRule.setActive(params.active);
+        }
+
+        SaveResult saveResult = SpringSfApiApplication.connection.updateMetadata(readResult.getRecords())[0];
+
+        if (!saveResult.isSuccess()){
+            System.out.println("Error");
+            System.out.println(saveResult.getErrors()[0].getMessage());
+            return "ERROR";
+        }
+
+        return "DONE";
+
+    }
+
+
 
 }
