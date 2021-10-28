@@ -2,6 +2,7 @@ package com.example.demo;
 
 import com.sforce.soap.metadata.*;
 import com.sforce.ws.ConnectionException;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -117,18 +118,18 @@ public class RestEndpoints {
             System.out.println("profile " + profile.isCustom() +" " + profile.getFullName());
 
 //            Checking if we can edit description or not.
-            profile.setDescription("Edited");
+//            profile.setDescription("Edited");
 
 //            Code for adding IP ranges below.
 
-//            ProfileLoginIpRange[] profileLoginIpRanges = profile.getLoginIpRanges();
-//            List<ProfileLoginIpRange> ranges = new ArrayList<>(Arrays.asList(profileLoginIpRanges));
-//
-//            for (IPRanges ipRanges : params.ipRanges){
-//                ranges.add(ipRanges.toProfileLogin());
-//            }
-//
-//            profile.setLoginIpRanges(ranges.toArray(ProfileLoginIpRange[]::new));
+            ProfileLoginIpRange[] profileLoginIpRanges = profile.getLoginIpRanges();
+            List<ProfileLoginIpRange> ranges = new ArrayList<>(Arrays.asList(profileLoginIpRanges));
+
+            for (IPRanges ipRanges : params.ipRanges){
+                ranges.add(ipRanges.toProfileLogin());
+            }
+
+            profile.setLoginIpRanges(ranges.toArray(ProfileLoginIpRange[]::new));
         }
 
 //        Save result throws error.
@@ -239,6 +240,71 @@ public class RestEndpoints {
 
         return "DONE";
 
+    }
+
+
+    static class AlertRecipient{
+        public String recipient;
+        public String type;
+
+        public WorkflowEmailRecipient toWorkflowEmailRecipient(){
+            WorkflowEmailRecipient workflowEmailRecipient = new WorkflowEmailRecipient();
+            workflowEmailRecipient.setRecipient(recipient);
+            if (type.toLowerCase().equals("user")){
+                workflowEmailRecipient.setType(ActionEmailRecipientTypes.user);
+            }else{
+                workflowEmailRecipient.setType(ActionEmailRecipientTypes.owner);
+            }
+            return workflowEmailRecipient;
+        }
+    }
+
+    static class WorkflowAlertParams{
+        public String name;
+        public List<AlertRecipient> recipients;
+
+        public boolean check(){
+            return name != null && recipients != null;
+        }
+    }
+
+    @PostMapping("/workflowalert")
+    public String workflowAlert(@RequestBody WorkflowAlertParams params) throws ConnectionException {
+        if (!params.check()){
+            return "Bad request";
+        }
+
+        ReadResult readResult = SpringSfApiApplication.connection.readMetadata("WorkflowAlert", new String[]{params.name});
+        Metadata[] records = readResult.getRecords();
+
+        if (records.length == 0){
+            return "ERROR";
+        }
+
+        for (Metadata record : records){
+
+            WorkflowAlert workflowAlert = (WorkflowAlert) record;
+            System.out.println("Found: " + workflowAlert.getFullName());
+
+            workflowAlert.setCcEmails(null);
+            WorkflowEmailRecipient[] prevRecipients = workflowAlert.getRecipients();
+            List<WorkflowEmailRecipient> emailRecipientList = new ArrayList<>(Arrays.asList(prevRecipients));
+
+            for (AlertRecipient recipient : params.recipients){
+                emailRecipientList.add(recipient.toWorkflowEmailRecipient());
+            }
+
+            workflowAlert.setRecipients(emailRecipientList.toArray(WorkflowEmailRecipient[]::new));
+        }
+
+        SaveResult saveResult = SpringSfApiApplication.connection.updateMetadata(readResult.getRecords())[0];
+
+        if (!saveResult.isSuccess()){
+            System.out.println("Error");
+            System.out.println(saveResult.getErrors()[0].getMessage());
+            return "ERROR";
+        }
+        return "DONE";
     }
 
 
