@@ -117,18 +117,18 @@ public class RestEndpoints {
             System.out.println("profile " + profile.isCustom() +" " + profile.getFullName());
 
 //            Checking if we can edit description or not.
-            profile.setDescription("Edited");
+//            profile.setDescription("Edited");
 
 //            Code for adding IP ranges below.
 
-//            ProfileLoginIpRange[] profileLoginIpRanges = profile.getLoginIpRanges();
-//            List<ProfileLoginIpRange> ranges = new ArrayList<>(Arrays.asList(profileLoginIpRanges));
-//
-//            for (IPRanges ipRanges : params.ipRanges){
-//                ranges.add(ipRanges.toProfileLogin());
-//            }
-//
-//            profile.setLoginIpRanges(ranges.toArray(ProfileLoginIpRange[]::new));
+            ProfileLoginIpRange[] profileLoginIpRanges = profile.getLoginIpRanges();
+            List<ProfileLoginIpRange> ranges = new ArrayList<>(Arrays.asList(profileLoginIpRanges));
+
+            for (IPRanges ipRanges : params.ipRanges){
+                ranges.add(ipRanges.toProfileLogin());
+            }
+
+            profile.setLoginIpRanges(ranges.toArray(ProfileLoginIpRange[]::new));
         }
 
 //        Save result throws error.
