@@ -2,6 +2,7 @@ package com.example.demo;
 
 import com.sforce.soap.metadata.*;
 import com.sforce.ws.ConnectionException;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -166,7 +167,7 @@ public class RestEndpoints {
         return "DONE";
     }
 
-    static class ValidationRuleParams{
+    static class RuleParams{
         public String name;
         public boolean active;
 
@@ -176,7 +177,7 @@ public class RestEndpoints {
     }
 
     @PostMapping("/updatevalidation")
-    public String updateValidationRules(@RequestBody ValidationRuleParams params) throws ConnectionException {
+    public String updateValidationRules(@RequestBody RuleParams params) throws ConnectionException {
         if (!params.check()){
             return "Bad request";
         }
@@ -204,5 +205,106 @@ public class RestEndpoints {
         }
         return "DONE";
     }
+
+
+
+    @PostMapping("/updateworkflowrule")
+    public String updateWorkflowRule(@RequestBody RuleParams params) throws ConnectionException {
+        if (!params.check()){
+            return "Bad request";
+        }
+
+        ReadResult readResult = SpringSfApiApplication.connection.readMetadata("WorkflowRule", new String[]{params.name});
+
+        Metadata[] records = readResult.getRecords();
+
+        if(records.length == 0 || records[0] == null){
+            return "Invalid name! Workflow rule not found";
+        }
+
+        for (Metadata rec : records){
+            WorkflowRule workflowRule = (WorkflowRule) rec;
+
+            System.out.println("Found: " + workflowRule.getFullName());
+
+            workflowRule.setActive(params.active);
+        }
+
+        SaveResult saveResult = SpringSfApiApplication.connection.updateMetadata(readResult.getRecords())[0];
+
+        if (!saveResult.isSuccess()){
+            System.out.println("Error");
+            System.out.println(saveResult.getErrors()[0].getMessage());
+            return "ERROR";
+        }
+
+        return "DONE";
+
+    }
+
+    static class AlertRecipient{
+        public String recipient;
+        public String type;
+
+        public WorkflowEmailRecipient toWorkflowEmailRecipient(){
+            WorkflowEmailRecipient workflowEmailRecipient = new WorkflowEmailRecipient();
+            workflowEmailRecipient.setRecipient(recipient);
+            if (type.toLowerCase().equals("user")){
+                workflowEmailRecipient.setType(ActionEmailRecipientTypes.user);
+            }else{
+                workflowEmailRecipient.setType(ActionEmailRecipientTypes.owner);
+            }
+            return workflowEmailRecipient;
+        }
+    }
+
+    static class WorkflowAlertParams{
+        public String name;
+        public List<AlertRecipient> recipients;
+
+        public boolean check(){
+            return name != null && recipients != null;
+        }
+    }
+
+    @PostMapping("/workflowalert")
+    public String workflowAlert(@RequestBody WorkflowAlertParams params) throws ConnectionException {
+        if (!params.check()){
+            return "Bad request";
+        }
+
+        ReadResult readResult = SpringSfApiApplication.connection.readMetadata("WorkflowAlert", new String[]{params.name});
+        Metadata[] records = readResult.getRecords();
+
+        if (records.length == 0){
+            return "ERROR";
+        }
+
+        for (Metadata record : records){
+
+            WorkflowAlert workflowAlert = (WorkflowAlert) record;
+            System.out.println("Found: " + workflowAlert.getFullName());
+
+            workflowAlert.setCcEmails(null);
+            WorkflowEmailRecipient[] prevRecipients = workflowAlert.getRecipients();
+            List<WorkflowEmailRecipient> emailRecipientList = new ArrayList<>(Arrays.asList(prevRecipients));
+
+            for (AlertRecipient recipient : params.recipients){
+                emailRecipientList.add(recipient.toWorkflowEmailRecipient());
+            }
+
+            workflowAlert.setRecipients(emailRecipientList.toArray(WorkflowEmailRecipient[]::new));
+        }
+
+        SaveResult saveResult = SpringSfApiApplication.connection.updateMetadata(readResult.getRecords())[0];
+
+        if (!saveResult.isSuccess()){
+            System.out.println("Error");
+            System.out.println(saveResult.getErrors()[0].getMessage());
+            return "ERROR";
+        }
+        return "DONE";
+    }
+
 
 }
