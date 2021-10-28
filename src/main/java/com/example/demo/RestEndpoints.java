@@ -286,7 +286,6 @@ public class RestEndpoints {
             WorkflowAlert workflowAlert = (WorkflowAlert) record;
             System.out.println("Found: " + workflowAlert.getFullName());
 
-            workflowAlert.setCcEmails(null);
             WorkflowEmailRecipient[] prevRecipients = workflowAlert.getRecipients();
             List<WorkflowEmailRecipient> emailRecipientList = new ArrayList<>(Arrays.asList(prevRecipients));
 
@@ -306,6 +305,97 @@ public class RestEndpoints {
         }
         return "DONE";
     }
+
+    static class AdditionalEmailParams{
+        public String name;
+
+        public boolean check(){
+            return name != null && !name.isEmpty();
+
+        }
+    }
+
+    @DeleteMapping("removeadditionals")
+    public String removeAdditionalEmails(@RequestBody AdditionalEmailParams params) throws ConnectionException {
+        if (!params.check()){
+            return "ERROR";
+        }
+
+        ReadResult readResult = SpringSfApiApplication.connection.readMetadata("WorkflowAlert", new String[]{params.name});
+        Metadata[] records = readResult.getRecords();
+        if (records.length == 0 || records[0] == null){
+            return "ERROR";
+        }
+        for (Metadata record : records){
+           WorkflowAlert workflowAlert = (WorkflowAlert) record;
+            System.out.println("FOUND: " + workflowAlert.getFullName());
+            workflowAlert.setCcEmails(null);
+        }
+
+        SaveResult saveResult = SpringSfApiApplication.connection.updateMetadata(readResult.getRecords())[0];
+
+        if (!saveResult.isSuccess()){
+            System.out.println("ERROR");
+            System.out.println(saveResult.getErrors()[0].getMessage());
+            return "ERROR";
+        }
+
+        return "DONE";
+
+    }
+
+    //    Creating a new Permission set.
+//    Didn't work...getErrors().length is also zero.
+
+//    static class PermissionSetUserParams{
+//        public String name;
+//        public boolean enabled;
+//
+//        public PermissionSetUserPermission toPermissionSetUserPermission(){
+//            PermissionSetUserPermission permset = new PermissionSetUserPermission();
+//            permset.setName(name);
+//            permset.setEnabled(enabled);
+//            return permset;
+//        }
+//    }
+//
+//    static class PermissionSetParams{
+//        public String name;
+//        public List<PermissionSetUserParams> perms;
+//
+//        public boolean check(){
+//            return name != null && !name.isEmpty() && perms != null;
+//        }
+//    }
+//
+//    @PostMapping("/permissionset")
+//    public String createPermissionSet(@RequestBody PermissionSetParams params) throws ConnectionException {
+//
+//        if (!params.check()){
+//
+//            return "Error";
+//        }
+//
+//        PermissionSet permissionSet = new PermissionSet();
+//        permissionSet.setLabel(params.name);
+//
+//        List<PermissionSetUserPermission> userPermissions = new ArrayList<>();
+//
+//        for (PermissionSetUserParams perm : params.perms){
+//            userPermissions.add(perm.toPermissionSetUserPermission());
+//        }
+//
+//        permissionSet.setUserPermissions(userPermissions.toArray(PermissionSetUserPermission[]::new));
+//
+//        SaveResult saveResult = SpringSfApiApplication.connection.createMetadata(new Metadata[]{permissionSet})[0];
+//
+//        if (!saveResult.isSuccess()){
+//            System.out.println("ERROR");
+//            System.out.println(saveResult.getErrors().length);
+//            return "ERROR";
+//        }
+//        return "DONE";
+//    }
 
 
 
